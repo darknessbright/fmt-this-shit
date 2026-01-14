@@ -7,7 +7,6 @@ import uuid
 from datetime import datetime
 from docx import Document
 from docx.shared import Pt, Inches
-import markdown as md_lib
 
 # 常量配置
 # 获取项目根目录（backend 的上级目录）
@@ -197,7 +196,7 @@ def convert_markdown(markdown):
 
 def generate_preview_html(markdown):
     """
-    生成预览 HTML
+    生成预览 HTML（保留 LaTeX 公式供 MathJax 渲染）
 
     Args:
         markdown: Markdown 内容
@@ -205,8 +204,53 @@ def generate_preview_html(markdown):
     Returns:
         str: HTML 内容
     """
-    # 使用 python-markdown 生成 HTML
-    html = md_lib.markdown(markdown, extensions=['extra', 'codehilite'])
+    # 简单的 Markdown 转 HTML，保留 LaTeX 公式
+    lines = markdown.split('\n')
+    html_lines = []
+    in_code_block = False
+    code_lines = []
+
+    for line in lines:
+        # 检查代码块
+        if line.strip().startswith('```'):
+            if not in_code_block:
+                in_code_block = True
+                code_lines = []
+            else:
+                # 代码块结束
+                code_html = '<pre><code>' + '\n'.join(code_lines) + '</code></pre>'
+                html_lines.append(code_html)
+                in_code_block = False
+            continue
+
+        if in_code_block:
+            code_lines.append(line)
+            continue
+
+        # 处理标题
+        if line.startswith('# '):
+            level = len(line) - len(line.lstrip('#'))
+            if level <= 6:
+                text = line.lstrip('#').strip()
+                html_lines.append(f'<h{level}>{text}</h{level}>')
+                continue
+
+        # 处理粗体
+        line = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', line)
+        line = re.sub(r'_(.+?)_', r'<em>\1</em>', line)
+
+        # 处理代码块
+        line = re.sub(r'`([^`]+)`', r'<code>\1</code>', line)
+
+        # 处理空行
+        if not line.strip():
+            html_lines.append('<br>')
+        else:
+            # 将 Markdown 格式的公式转换为 HTML（保留供 MathJax 处理）
+            # \( ... \) 和 \[ ... \] 保持不变，让 MathJax 处理
+            html_lines.append(f'<p>{line}</p>')
+
+    html = '\n'.join(html_lines)
 
     # 添加基础样式
     styled_html = f"""
