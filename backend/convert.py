@@ -108,7 +108,7 @@ def convert_with_pandoc(markdown, output_path):
             [
                 PANDOC_PATH,
                 temp_md,
-                '-f', 'markdown',
+                '-f', 'markdown+tex_math_dollars',  # 支持 \(...\) 和 \[...\] 格式
                 '-t', 'docx',
                 '--mathml',
                 '-o', output_path
