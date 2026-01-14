@@ -58,6 +58,11 @@ async function convertMarkdown() {
         // 更新预览
         preview.innerHTML = data.html;
 
+        // 触发 MathJax 重新渲染数学公式
+        if (window.MathJax && window.MathJax.typesetPromise) {
+            window.MathJax.typesetPromise([preview]).catch((err) => console.log('MathJax error:', err));
+        }
+
         // 保存下载链接
         currentDocxUrl = data.docx_url;
         currentPdfUrl = data.pdf_url;
