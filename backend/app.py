@@ -1,6 +1,6 @@
 # backend/app.py
 from flask import Flask, send_file, request, jsonify, render_template_string
-from convert import convert_markdown
+from convert import convert_markdown, TEMP_DIR
 import os
 
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
@@ -37,7 +37,7 @@ def convert():
 @app.route('/api/download/<filename>')
 def download(filename):
     """文件下载"""
-    file_path = os.path.join('temp', filename)
+    file_path = os.path.join(TEMP_DIR, filename)
 
     if not os.path.exists(file_path):
         return jsonify({'error': '文件不存在'}), 404
