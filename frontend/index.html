@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI2Word - Markdown 转 Word</title>
+    <link rel="stylesheet" href="/libs/codemirror/lib/codemirror.css">
+    <link rel="stylesheet" href="/libs/codemirror/theme/default.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="header">
+        <h1>AI2Word</h1>
+        <div class="actions">
+            <button id="exportWord" class="btn btn-primary">导出 Word</button>
+            <button id="exportPdf" class="btn btn-secondary">导出 PDF</button>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="editor-panel">
+            <div class="panel-header">Markdown 输入</div>
+            <textarea id="editor"></textarea>
+        </div>
+
+        <div class="preview-panel">
+            <div class="panel-header">实时预览</div>
+            <div id="preview" class="preview-content">
+                <p class="placeholder">在左侧输入 Markdown 内容，这里将显示预览...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>支持 Markdown、LaTeX 公式 ($E=mc^2$)、Mermaid 图表、代码块、表格转换</p>
+    </div>
+
+    <script src="/libs/codemirror/lib/codemirror.js"></script>
+    <script src="/libs/codemirror/mode/markdown/markdown.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>
