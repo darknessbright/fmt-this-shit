@@ -1,5 +1,6 @@
 # backend/app.py
 from flask import Flask, send_file, request, jsonify, render_template_string
+from convert import convert_markdown
 import os
 
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
@@ -20,15 +21,32 @@ def health():
 
 @app.route('/api/convert', methods=['POST'])
 def convert():
-    """转换接口 - 占位符"""
+    """转换接口"""
     data = request.json
     markdown = data.get('markdown', '')
-    # TODO: 实现转换逻辑
-    return jsonify({
-        'html': '<p>预览功能开发中</p>',
-        'docx_url': None,
-        'pdf_url': None
-    })
+
+    if not markdown.strip():
+        return jsonify({'error': '内容不能为空'}), 400
+
+    try:
+        result = convert_markdown(markdown)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/download/<filename>')
+def download(filename):
+    """文件下载"""
+    file_path = os.path.join('temp', filename)
+
+    if not os.path.exists(file_path):
+        return jsonify({'error': '文件不存在'}), 404
+
+    return send_file(
+        file_path,
+        as_attachment=True,
+        download_name=filename
+    )
 
 if __name__ == '__main__':
     print("=" * 40)
