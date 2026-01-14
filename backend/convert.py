@@ -12,7 +12,7 @@ import markdown
 # 常量配置
 PANDOC_PATH = '../pandoc/pandoc.exe'
 MMDC_PATH = '../node_modules/.bin/mmdc.cmd'
-TEMP_DIR = 'temp'
+TEMP_DIR = 'backend/temp'
 
 def ensure_temp_dir():
     """确保临时目录存在"""
