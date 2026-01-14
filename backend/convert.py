@@ -10,9 +10,11 @@ from docx.shared import Pt, Inches
 import markdown
 
 # 常量配置
-PANDOC_PATH = '../pandoc/pandoc.exe'
-MMDC_PATH = '../node_modules/.bin/mmdc.cmd'
-TEMP_DIR = 'backend/temp'
+# 获取项目根目录（backend 的上级目录）
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PANDOC_PATH = os.path.join(PROJECT_ROOT, 'pandoc', 'pandoc.exe')
+MMDC_PATH = os.path.join(PROJECT_ROOT, 'node_modules', '.bin', 'mmdc.cmd')
+TEMP_DIR = os.path.join(PROJECT_ROOT, 'backend', 'temp')
 
 def ensure_temp_dir():
     """确保临时目录存在"""

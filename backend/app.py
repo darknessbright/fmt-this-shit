@@ -1,6 +1,6 @@
 # backend/app.py
 from flask import Flask, send_file, request, jsonify, render_template_string
-from convert import convert_markdown, TEMP_DIR
+from convert import convert_markdown, TEMP_DIR, PANDOC_PATH, MMDC_PATH
 import os
 
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
@@ -15,8 +15,8 @@ def health():
     """健康检查"""
     return jsonify({
         'status': 'ok',
-        'pandoc_available': os.path.exists('../pandoc/pandoc.exe'),
-        'mermaid_available': os.path.exists('../node_modules/.bin/mmdc.cmd')
+        'pandoc_available': os.path.exists(PANDOC_PATH),
+        'mermaid_available': os.path.exists(MMDC_PATH)
     })
 
 @app.route('/api/convert', methods=['POST'])
