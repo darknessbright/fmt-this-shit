@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 from docx import Document
 from docx.shared import Pt, Inches
-import markdown
+import markdown as md_lib
 
 # 常量配置
 # 获取项目根目录（backend 的上级目录）
@@ -206,7 +206,7 @@ def generate_preview_html(markdown):
         str: HTML 内容
     """
     # 使用 python-markdown 生成 HTML
-    html = markdown.markdown(markdown, extensions=['extra', 'codehilite'])
+    html = md_lib.markdown(markdown, extensions=['extra', 'codehilite'])
 
     # 添加基础样式
     styled_html = f"""
