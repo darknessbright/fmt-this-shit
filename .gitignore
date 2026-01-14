@@ -23,3 +23,7 @@ backend/temp/
 # OS
 .DS_Store
 Thumbs.db
+
+# Frontend libraries (to be downloaded separately)
+frontend/libs/codemirror/*
+!frontend/libs/codemirror/.gitkeep
