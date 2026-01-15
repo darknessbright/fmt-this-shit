@@ -22,14 +22,9 @@ def ensure_temp_dir():
 
 def preprocess_latex(markdown):
     """
-    智能预处理：自动识别并包裹数学符号
+    预处理：保护已有 LaTeX 公式，避免被后续处理破坏
 
-    检测以下模式并包裹为 \( ... \)：
-    - 希腊字母：α, β, γ, θ, λ, μ, σ, ω, Δ, Σ, Π, Ω 等
-    - 数学函数带下标/上标：s_i, x^2, k_{i+1} 等
-    - 数学花体字母：\mathcal{W}, \mathcal{D} 等（但已包裹的跳过）
-    - 数学符号：\dots, \ldots, \in, \leq, \geq, \neq, \approx 等
-    - 已有 \( ... \) 或 \[ ... \] 包裹的跳过
+    只保护 AI 输出中已有的 LaTeX 格式，不添加任何新格式。
 
     Args:
         markdown: 原始 Markdown 内容
@@ -40,85 +35,30 @@ def preprocess_latex(markdown):
     # 标准化换行符为 \n（处理 Windows \r\n）
     markdown = markdown.replace('\r\n', '\n').replace('\r', '\n')
 
-    # 首先保护已有的 LaTeX 公式，避免重复处理
-    # 使用更独特的占位符，避免被后续正则匹配
+    # 保护已有 LaTeX 公式，避免被后续处理破坏
+    # 使用占位符暂时替换，处理完后再恢复
     latex_blocks = []
     def save_latex_block(match):
         latex_blocks.append(match.group(0))
         return f"LATEXBLOCKPLACEHOLDERXYZ{len(latex_blocks)-1}PLACEHOLDERXYZ"
 
-    # 使用 re.escape 创建正确的模式来匹配 \[...\] 和 \(...\)
-    # 注意：r'\[' 是反斜杠+方括号，r'[' 只是方括号
+    # 保护 \[ ... \] (display math) - 跨行匹配
     display_open = re.escape(r'\[')
     display_close = re.escape(r'\]')
-    inline_open = re.escape(r'\(')
-    inline_close = re.escape(r'\)')
-
-    # 保护 \[ ... \] (display math) - 跨行匹配
     display_pattern = display_open + r'.*?' + display_close
     markdown = re.sub(display_pattern, save_latex_block, markdown, flags=re.DOTALL)
 
     # 保护 \( ... \) (inline math)
+    inline_open = re.escape(r'\(')
+    inline_close = re.escape(r'\)')
     inline_pattern = inline_open + r'.*?' + inline_close
     markdown = re.sub(inline_pattern, save_latex_block, markdown)
 
-    # 保护 $ ... $ (alternative inline math)
+    # 保护 $ ... $ 和 $$ ... $$ 格式
     markdown = re.sub(r'\$[^$\n]+?\$', save_latex_block, markdown)
-
-    # 保护 $$ ... $$ (alternative display math)
     markdown = re.sub(r'\$\$[^$]+?\$\$', save_latex_block, markdown, flags=re.DOTALL)
 
-    # 定义数学符号模式 - 排除占位符格式
-    patterns = [
-        # 希腊字母（小写和大写）- 但不在占位符中
-        r'(?<!PLACEHOLDER)(?<!XYZ)\\?[αβγδεζηθικλμνξοπρστυφχψωΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ](?!PLACEHOLDER)',
-
-        # LaTeX 希腊字母
-        r'\\(alpha|beta|gamma|delta|epsilon|zeta|eta|theta|iota|kappa|lambda|mu|nu|xi|pi|rho|sigma|tau|upsilon|phi|chi|psi|omega)',
-        r'\\(Alpha|Beta|Gamma|Delta|Epsilon|Zeta|Eta|Theta|Iota|Kappa|Lambda|Mu|Nu|Xi|Pi|Rho|Sigma|Tau|Upsilon|Phi|Chi|Psi|Omega)',
-
-        # 数学字母类：\mathcal, \mathbb, \mathbf, \mathfrak, \mathsf
-        r'\\(mathcal|mathbb|mathbf|mathfrak|mathsf|mathrm)\{[^}]+\}',
-
-        # 下标模式：x_i, s_1, k_{i+1}, θ_j 等（至少一个字母后跟 _）
-        r'[a-zA-Zα-ωΑ-Ω]_\{[^}]+\}',     # x_{i+1}
-        r'[a-zA-Zα-ωΑ-Ω]_[a-zA-Z0-9]',    # s_i
-
-        # 上标模式：x^2, θ^{*} 等
-        r'[a-zA-Zα-ωΑ-Ω]\^\{[^}]+\}',     # x^{2n}
-        r'[a-zA-Zα-ωΑ-Ω]\^[0-9+\-*]',     # x^2
-
-        # 组合上下标：s_{i}^{j}, x_{i+1}^{*}
-        r'[a-zA-Zα-ωΑ-Ω]_\{[^}]+\}\^\{[^}]+\}',
-        r'[a-zA-Zα-ωΑ-Ω]\^[0-9+\-]_\{[^}]+\}',
-
-        # LaTeX 数学符号/运算符
-        r'\\(dots|ldots|cdots|vdots|ddots)',
-        r'\\(le|ge|leq|geq|ne|neq|approx|equiv|sim)',
-        r'\\(in|notin|subset|subseteq|supset|supseteq)',
-        r'\\(cup|cap|setminus|times|div|pm|mp)',
-        r'\\(to|rightarrow|leftarrow|leftrightarrow|Rightarrow|Leftarrow|Leftrightarrow)',
-        r'\\(partial|nabla|infty|emptyset|exists|forall)',
-        r'\\(lfloor|rfloor|lceil|rceil|langle|rangle)',
-    ]
-
-    # 对每个模式进行处理
-    for pattern in patterns:
-        def wrap_math(match):
-            content = match.group(0)
-            # 避免重复包裹
-            if content.startswith('\\(') or content.startswith('$'):
-                return content
-            # 紧凑格式：\(content\) 而不是 \( content \)
-            return f'\\({content}\\)'
-
-        markdown = re.sub(pattern, wrap_math, markdown)
-
-    # 恢复之前保护的 LaTeX 块
-    for i, block in enumerate(latex_blocks):
-        markdown = markdown.replace(f"LATEXBLOCKPLACEHOLDERXYZ{i}PLACEHOLDERXYZ", block)
-
-    return markdown
+    return markdown, latex_blocks
 
 def render_mermaid_diagrams(markdown):
     """
@@ -268,8 +208,8 @@ def convert_markdown(markdown):
     """
     ensure_temp_dir()
 
-    # 1. 智能预处理 LaTeX 数学符号（在所有处理之前）
-    markdown = preprocess_latex(markdown)
+    # 1. 预处理：保护已有 LaTeX 公式
+    markdown, latex_blocks = preprocess_latex(markdown)
 
     # 2. 提取并渲染 Mermaid 图表
     mermaid_images = render_mermaid_diagrams(markdown)
@@ -277,19 +217,23 @@ def convert_markdown(markdown):
     # 3. 替换 Markdown 中的 mermaid 代码块为图片引用
     markdown_with_images = replace_mermaid_with_images(markdown, mermaid_images)
 
-    # 4. 生成输出文件名
+    # 4. 恢复 LaTeX 公式（用于 Pandoc 转换）
+    for i, block in enumerate(latex_blocks):
+        markdown_with_images = markdown_with_images.replace(f"LATEXBLOCKPLACEHOLDERXYZ{i}PLACEHOLDERXYZ", block)
+
+    # 5. 生成输出文件名
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     docx_filename = f'output_{timestamp}_{uuid.uuid4().hex[:8]}.docx'
     docx_path = os.path.join(TEMP_DIR, docx_filename)
 
-    # 5. Pandoc 转换
+    # 6. Pandoc 转换
     convert_with_pandoc(markdown_with_images, docx_path)
 
-    # 6. python-docx 样式调整
+    # 7. python-docx 样式调整
     adjust_docx_styles(docx_path)
 
-    # 7. 生成预览 HTML
-    preview_html = generate_preview_html(markdown_with_images)
+    # 8. 生成预览 HTML（传递 latex_blocks 用于恢复）
+    preview_html = generate_preview_html(markdown_with_images, latex_blocks)
 
     return {
         'html': preview_html,
@@ -297,9 +241,47 @@ def convert_markdown(markdown):
         'pdf_url': None  # PDF 导出为可选功能
     }
 
-def generate_preview_html(markdown):
+def generate_preview_html(markdown, latex_blocks):
     """
     生成预览 HTML（保留 LaTeX 公式供 MathJax 渲染）
+
+    Args:
+        markdown: Markdown 内容
+        latex_blocks: LaTeX 公式块列表
+
+    Returns:
+        str: HTML 内容
+    """
+    # 使用简单处理，避免 markdown 库破坏 LaTeX 公式
+    html = simple_markdown_to_html(markdown)
+
+    # 恢复 LaTeX 公式占位符（在 markdown 转换之后）
+    for i, block in enumerate(latex_blocks):
+        html = html.replace(f"LATEXBLOCKPLACEHOLDERXYZ{i}PLACEHOLDERXYZ", block)
+
+    # 添加基础样式
+    styled_html = f"""
+    <div style="font-family: 'Microsoft YaHei', sans-serif; line-height: 1.6; padding: 20px;">
+        {html}
+        <style>
+            h1, h2, h3, h4, h5, h6 {{ color: #333; margin-top: 20px; margin-bottom: 10px; }}
+            code {{ background-color: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-family: 'Consolas', monospace; }}
+            pre {{ background-color: #f4f4f4; padding: 10px; border-radius: 5px; overflow-x: auto; }}
+            blockquote {{ border-left: 4px solid #ddd; padding-left: 10px; color: #666; margin: 10px 0; }}
+            table {{ border-collapse: collapse; width: 100%; margin: 10px 0; }}
+            th, td {{ border: 1px solid #ddd; padding: 8px 12px; text-align: left; }}
+            th {{ background-color: #f2f2f2; font-weight: bold; }}
+            img {{ max-width: 100%; height: auto; }}
+            p {{ margin: 8px 0; }}
+        </style>
+    </div>
+    """
+
+    return styled_html
+
+def simple_markdown_to_html(markdown):
+    """
+    简单的 Markdown 转 HTML
 
     Args:
         markdown: Markdown 内容
@@ -307,64 +289,95 @@ def generate_preview_html(markdown):
     Returns:
         str: HTML 内容
     """
-    # 使用 re.escape 创建正确的模式来匹配 LaTeX 公式
-    display_open = re.escape(r'\[')
-    display_close = re.escape(r'\]')
-    inline_open = re.escape(r'\(')
-    inline_close = re.escape(r'\)')
-
-    # 首先保护所有 LaTeX 公式（包括跨行的 display math）
-    latex_blocks = []
-    def save_latex_block(match):
-        latex_blocks.append(match.group(0))
-        return f"LATEXBLOCKPLACEHOLDERXYZ{len(latex_blocks)-1}PLACEHOLDERXYZ"
-
-    # 保护 \[ ... \] (display math) - 跨行匹配
-    display_pattern = display_open + r'.*?' + display_close
-    markdown = re.sub(display_pattern, save_latex_block, markdown, flags=re.DOTALL)
-
-    # 保护 \( ... \) (inline math)
-    inline_pattern = inline_open + r'.*?' + inline_close
-    markdown = re.sub(inline_pattern, save_latex_block, markdown)
-
-    # 处理剩余的 Markdown 内容（逐行处理，但跳过占位符行）
     lines = markdown.split('\n')
     html_lines = []
     in_code_block = False
     code_lines = []
+    in_display_math = False
+    display_math_lines = []
+    in_table = False
+    table_rows = []
 
-    for line in lines:
-        # 跳过占位符行（LaTeX 公式占位符单独占一行）
-        if 'LATEXBLOCKPLACEHOLDERXYZ' in line and not line.strip().startswith('```'):
-            # 占位符行不添加 <p> 标签
-            html_lines.append(line)
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+
+        # 检测 display math 开始
+        if line.strip() == r'\[':
+            in_display_math = True
+            display_math_lines = [line]
+            i += 1
+            # 收集 display math 内容直到 \]
+            while i < len(lines):
+                if lines[i].strip() == r'\]':
+                    display_math_lines.append(lines[i])
+                    # 渲染完整的 display math
+                    math_content = '\n'.join(display_math_lines)
+                    html_lines.append(f'<p>{math_content}</p>')
+                    in_display_math = False
+                    display_math_lines = []
+                    i += 1
+                    break
+                else:
+                    display_math_lines.append(lines[i])
+                    i += 1
             continue
 
-        # 检查代码块
+        # 如果在 display math 中，跳过其他处理
+        if in_display_math:
+            i += 1
+            continue
+
+        # 处理代码块
         if line.strip().startswith('```'):
             if not in_code_block:
                 in_code_block = True
                 code_lines = []
             else:
-                # 代码块结束
                 code_html = '<pre><code>' + '\n'.join(code_lines) + '</code></pre>'
                 html_lines.append(code_html)
                 in_code_block = False
+            i += 1
             continue
 
         if in_code_block:
             code_lines.append(line)
+            i += 1
             continue
 
         # 处理标题
-        if line.startswith('# '):
+        if line.startswith('#'):
             level = len(line) - len(line.lstrip('#'))
-            if level <= 6:
+            if 1 <= level <= 6:
                 text = line.lstrip('#').strip()
                 html_lines.append(f'<h{level}>{text}</h{level}>')
+                i += 1
                 continue
 
-        # 处理粗体
+        # 处理表格
+        if '|' in line and line.strip():
+            if not in_table:
+                in_table = True
+                table_rows = []
+            table_rows.append(line)
+            # 检查后续行是否还有表格
+            next_idx = i + 1
+            next_lines = lines[next_idx:next_idx+6] if next_idx < len(lines) else []
+            if not any('|' in l for l in next_lines):
+                # 渲染表格
+                html_lines.append(render_table(table_rows))
+                in_table = False
+                table_rows = []
+            i += 1
+            continue
+        elif in_table:
+            # 渲染表格
+            html_lines.append(render_table(table_rows))
+            in_table = False
+            table_rows = []
+            # 继续处理当前行
+
+        # 处理粗体和斜体
         line = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', line)
         line = re.sub(r'_(.+?)_', r'<em>\1</em>', line)
 
@@ -377,34 +390,27 @@ def generate_preview_html(markdown):
         else:
             html_lines.append(f'<p>{line}</p>')
 
-    html = '\n'.join(html_lines)
+        i += 1
 
-    # 恢复 LaTeX 公式（保持原始格式供 MathJax 处理）
-    for i, block in enumerate(latex_blocks):
-        # 判断是 display math 还是 inline math
-        if block.startswith(r'\['):
-            # Display math: 使用 <div> 包裹，避免与 <p> 嵌套问题
-            html = html.replace(f"LATEXBLOCKPLACEHOLDERXYZ{i}PLACEHOLDERXYZ",
-                               block)
-        else:
-            # Inline math: 保持原位
-            html = html.replace(f"LATEXBLOCKPLACEHOLDERXYZ{i}PLACEHOLDERXYZ", block)
+    return '\n'.join(html_lines)
 
-    # 添加基础样式
-    styled_html = f"""
-    <div style="font-family: 'Microsoft YaHei', sans-serif; line-height: 1.6; padding: 20px;">
-        {html}
-        <style>
-            h1, h2, h3, h4, h5, h6 {{ color: #333; margin-top: 20px; }}
-            code {{ background-color: #f4f4f4; padding: 2px 6px; border-radius: 3px; }}
-            pre {{ background-color: #f4f4f4; padding: 10px; border-radius: 5px; overflow-x: auto; }}
-            blockquote {{ border-left: 4px solid #ddd; padding-left: 10px; color: #666; }}
-            table {{ border-collapse: collapse; width: 100%; }}
-            th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-            th {{ background-color: #f2f2f2; }}
-            img {{ max-width: 100%; height: auto; }}
-        </style>
-    </div>
-    """
+def render_table(rows):
+    """渲染表格行为 HTML"""
+    if not rows:
+        return ''
 
-    return styled_html
+    html = ['<table>']
+    for i, row in enumerate(rows):
+        cells = [cell.strip() for cell in row.split('|') if cell.strip()]
+        if not cells:
+            continue
+        if i == 0 or all(re.match(r'^\s*[-:]+\s*$', cell) for cell in cells):
+            # 跳过分隔行
+            continue
+        tag = 'th' if i == 0 else 'td'
+        html.append('<tr>')
+        for cell in cells:
+            html.append(f'<{tag}>{cell}</{tag}>')
+        html.append('</tr>')
+    html.append('</table>')
+    return '\n'.join(html)
