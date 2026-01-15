@@ -1,119 +1,119 @@
 # Fmt this Shit - AI/Markdown to Word Converter
 
-一键将 Markdown/AI 输出转换为格式完美的 Word 文档
+Convert Markdown/AI output to perfectly formatted Word documents with one click
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 功能特性
+## Features
 
-- 📝 **实时预览** - 输入时自动转换并预览
-- 🧮 **数学公式** - 完美支持 LaTeX 数学公式
-- 📊 **Mermaid 图表** - 流程图自动渲染为图片
-- 📋 **表格转换** - Markdown 表格转 Word 表格
-- 💻 **代码块** - 保留代码格式和语法高亮
-- 📄 **批量导出** - 一键导出 Word 文档
-- 🚀 **一键启动** - 开箱即用的便携包版本
+- 📝 **Real-time Preview** - Automatic conversion and preview while typing
+- 🧮 **Math Formulas** - Perfect LaTeX math formula support
+- 📊 **Mermaid Diagrams** - Automatic rendering of flowcharts as images
+- 📋 **Table Conversion** - Markdown tables to Word tables
+- 💻 **Code Blocks** - Preserve code formatting and syntax highlighting
+- 📄 **Batch Export** - One-click Word document export
+- 🚀 **One-Click Launch** - Ready-to-use portable package
 
 ---
 
-## 获取方式
+## Get Started
 
-### 📦 便携包版（推荐）
+### 📦 Portable Package (Recommended)
 
-不想配置环境？直接下载便携包，双击 `start.bat` 即可运行。
+Don't want to configure the environment? Just download the portable package and double-click `start.bat` to run.
 
-➡️ [前往 Releases 下载最新便携包](https://github.com/darknessbright/fmt-this-shit/releases)
+➡️ [Download Latest Portable Package from Releases](https://github.com/darknessbright/fmt-this-shit/releases)
 
-### 💻 源码版
+### 💻 Source Code
 
-开发者或需要自定义配置的用户，可以从源码运行：
+For developers or users who need custom configuration:
 
 ```bash
 git clone https://github.com/darknessbright/fmt-this-shit.git
 cd fmt-this-shit
-# 参考下方安装说明
+# See installation instructions below
 ```
 
 ---
 
-## 系统要求
+## System Requirements
 
-### 便携包版
-- Windows 10 或更高版本
-- 无需安装 Python/Node.js
+### Portable Package
+- Windows 10 or higher
+- No need to install Python/Node.js
 
-### 源码版
-- Python 3.8 或更高版本
-- Node.js 16+ 和 npm
+### Source Code
+- Python 3.8 or higher
+- Node.js 16+ and npm
 - Windows 10+ / macOS / Linux
 
 ---
 
-## 快速开始
+## Quick Start
 
-### 方式一：便携包版（推荐）
+### Method 1: Portable Package (Recommended)
 
-1. 从 [Releases](https://github.com/darknessbright/fmt-this-shit/releases) 下载便携包
-2. 解压缩到任意目录
-3. 双击 `start.bat`
-4. 浏览器自动打开 http://localhost:5678
+1. Download the portable package from [Releases](https://github.com/darknessbright/fmt-this-shit/releases)
+2. Extract to any directory
+3. Double-click `start.bat`
+4. Browser automatically opens http://localhost:5678
 
-### 方式二：源码版
+### Method 2: Source Code
 
-#### Windows 用户
+#### Windows Users
 
 ```bash
-# 1. 克隆仓库
+# 1. Clone repository
 git clone https://github.com/darknessbright/fmt-this-shit.git
 cd fmt-this-shit
 
-# 2. 一键启动（自动配置环境）
+# 2. One-click launch (auto-configure environment)
 start.bat
 ```
 
-#### macOS/Linux 用户
+#### macOS/Linux Users
 
 ```bash
-# 1. 克隆仓库
+# 1. Clone repository
 git clone https://github.com/darknessbright/fmt-this-shit.git
 cd fmt-this-shit
 
-# 2. 创建虚拟环境
+# 2. Create virtual environment
 python3 -m venv .venv
 source .venv/bin/activate
 
-# 3. 安装依赖
+# 3. Install dependencies
 pip install -r requirements.txt
 npm install @mermaid-js/mermaid-cli
 
-# 4. 下载 Pandoc
-# 访问 https://pandoc.org/installing.html
-# 解压到项目根目录的 pandoc/ 文件夹
+# 4. Download Pandoc
+# Visit https://pandoc.org/installing.html
+# Extract to the pandoc/ folder in project root
 
-# 5. 启动服务
+# 5. Start service
 python backend/app.py
 ```
 
-启动成功后，访问 http://localhost:5678
+After successful startup, visit http://localhost:5678
 
 ---
 
-## 使用说明
+## Usage
 
-### Markdown 语法支持
+### Supported Markdown Syntax
 
-#### 标题
+#### Headings
 ```markdown
-# 一级标题
-## 二级标题
-### 三级标题
+# Heading 1
+## Heading 2
+### Heading 3
 ```
 
-#### 数学公式
-- 行内公式: `$E=mc^2$`
-- 块级公式: `$$\int_0^1 x dx$$`
+#### Math Formulas
+- Inline: `$E=mc^2$`
+- Block: `$$\int_0^1 x dx$$`
 
-#### Mermaid 图表
+#### Mermaid Diagrams
 ````markdown
 ```mermaid
 graph TD
@@ -121,14 +121,14 @@ graph TD
 ```
 ````
 
-#### 表格
+#### Tables
 ```markdown
-| 列1 | 列2 |
-|-----|-----|
-| 内容1 | 内容2 |
+| Col1 | Col2 |
+|------|------|
+| Content1 | Content2 |
 ```
 
-#### 代码块
+#### Code Blocks
 ````markdown
 ```python
 def hello():
@@ -136,85 +136,89 @@ def hello():
 ```
 ````
 
-### 基本操作
+### Basic Operations
 
-1. **输入内容** - 在左侧编辑器输入 Markdown 或 AI 生成的文本
-2. **实时预览** - 右侧自动显示转换效果
-3. **导出 Word** - 点击"导出 Word"按钮下载文档
-
----
-
-## 技术栈
-
-- **后端**: Flask 3.0, Pandoc, python-docx
-- **前端**: HTML5, CSS3, JavaScript (ES6+)
-- **编辑器**: CodeMirror 5.x
-- **图表渲染**: mermaid-cli
-- **数学公式**: MathJax 3.x (浏览器端渲染)
+1. **Input** - Type Markdown or AI-generated text in the left editor
+2. **Preview** - Right side automatically shows conversion result
+3. **Export** - Click "Export Word" button to download document
 
 ---
 
-## 项目结构
+## Tech Stack
+
+- **Backend**: Flask 3.0, Pandoc, python-docx
+- **Frontend**: HTML5, CSS3, JavaScript (ES6+)
+- **Editor**: CodeMirror 5.x
+- **Diagram Rendering**: mermaid-cli
+- **Math Formulas**: MathJax 3.x (browser-side rendering)
+
+---
+
+## Project Structure
 
 ```
 fmt-this-shit/
-├── backend/           # Flask 后端
-│   ├── app.py        # 应用入口
-│   ├── convert.py    # 转换逻辑
-│   └── temp/         # 临时文件（自动清理）
-├── frontend/          # 前端文件
-│   ├── index.html    # 主页面
-│   ├── css/          # 样式文件
+├── backend/           # Flask backend
+│   ├── app.py        # Application entry
+│   ├── convert.py    # Conversion logic
+│   └── temp/         # Temporary files (auto-cleaned)
+├── frontend/          # Frontend files
+│   ├── index.html    # Main page
+│   ├── css/          # Stylesheets
 │   ├── js/           # JavaScript
-│   └── libs/         # 第三方库
-│       └── codemirror/  # CodeMirror（需单独下载）
-├── docs/             # 文档
-├── start.bat         # Windows 一键启动脚本
-├── requirements.txt  # Python 依赖
-└── package.json      # npm 依赖配置
+│   └── libs/         # Third-party libraries
+│       └── codemirror/  # CodeMirror (download separately)
+├── docs/             # Documentation
+├── start.bat         # Windows one-click launcher
+├── requirements.txt  # Python dependencies
+└── package.json      # npm dependencies
 ```
 
 ---
 
-## 常见问题
+## FAQ
 
-### Q: 便携包版和源码版有什么区别？
-**A:** 便携包版内置了 Python 虚拟环境和 npm 依赖，下载后双击 `start.bat` 即可运行，适合不想配置环境的用户。源码版需要自己安装 Python 和 Node.js，但可以自定义配置。
+### Q: What's the difference between portable package and source code?
+**A:** The portable package comes with built-in Python virtual environment and npm dependencies. Just download, double-click `start.bat` and run. Perfect for users who don't want to configure the environment. Source code version requires installing Python and Node.js, but allows custom configuration.
 
-### Q: Mermaid 图表不显示？
+### Q: Mermaid diagrams not displaying?
 **A:**
-- **便携包版**: 已内置 mermaid-cli，直接可用
-- **源码版**: 运行 `npm install @mermaid-js/mermaid-cli` 安装
+- **Portable Package**: mermaid-cli is built-in, ready to use
+- **Source Code**: Run `npm install @mermaid-js/mermaid-cli` to install
 
-### Q: 数学公式显示异常？
-**A:** 确认 Pandoc 版本正确（2.19+）。便携包版已内置正确版本。
+### Q: Math formulas display incorrectly?
+**A:** Make sure Pandoc version is correct (2.19+). Portable package comes with the correct version built-in.
 
-### Q: 导出的 Word 打不开？
-**A:** 检查 `backend/temp/` 目录是否有写入权限。
+### Q: Exported Word file won't open?
+**A:** Check if `backend/temp/` directory has write permissions.
 
-### Q: CodeMirror 编辑器无法加载？
-**A:** 需要单独下载 CodeMirror 5.x：
-1. 访问 https://codemirror.net/
-2. 下载并解压到 `frontend/libs/codemirror/`
-
----
-
-## 许可证
-
-本项目采用 [MIT License](LICENSE) 开源协议。
+### Q: CodeMirror editor fails to load?
+**A:** Need to download CodeMirror 5.x separately:
+1. Visit https://codemirror.net/
+2. Download and extract to `frontend/libs/codemirror/`
 
 ---
 
-## 贡献
+## License
 
-欢迎提交 Issue 和 Pull Request！
+This project is licensed under the [MIT License](LICENSE).
 
-- 🐛 [报告 Bug](https://github.com/darknessbright/fmt-this-shit/issues/new?template=bug_report.md)
-- 💡 [功能建议](https://github.com/darknessbright/fmt-this-shit/issues/new?template=feature_request.md)
-- 🔧 [提交代码](https://github.com/darknessbright/fmt-this-shit/pulls)
+---
+
+## Contributing
+
+Issues and Pull Requests are welcome!
+
+- 🐛 [Report Bug](https://github.com/darknessbright/fmt-this-shit/issues/new?template=bug_report.md)
+- 💡 [Feature Request](https://github.com/darknessbright/fmt-this-shit/issues/new?template=feature_request.md)
+- 🔧 [Submit Code](https://github.com/darknessbright/fmt-this-shit/pulls)
 
 ---
 
 ## Star History
 
-如果这个项目对你有帮助，请给一个 ⭐️ Star！
+If this project helps you, please give it a ⭐️ Star!
+
+---
+
+**[中文文档 / Chinese Documentation](README.zh-CN.md)**
