@@ -147,9 +147,8 @@ def convert_with_pandoc(markdown, output_path):
             [
                 PANDOC_PATH,
                 temp_md,
-                '-f', 'markdown+tex_math_dollars',  # 支持 \(...\) 和 \[...\] 格式
+                '-f', 'markdown+tex_math_dollars+tex_math_single_backslash',  # 支持 \(...\) 和 \[...\] 格式
                 '-t', 'docx',
-                '--mathml',
                 '-o', output_path
             ],
             check=True,
@@ -217,22 +216,26 @@ def convert_markdown(markdown):
     # 3. 替换 Markdown 中的 mermaid 代码块为图片引用
     markdown_with_images = replace_mermaid_with_images(markdown, mermaid_images)
 
-    # 4. 恢复 LaTeX 公式（用于 Pandoc 转换）
+    # 4. 为Pandoc恢复LaTeX公式（用于Pandoc转换）
+    # Pandoc需要 \(...\) 和 \[...\] 格式
+    markdown_for_pandoc = markdown_with_images
     for i, block in enumerate(latex_blocks):
-        markdown_with_images = markdown_with_images.replace(f"LATEXBLOCKPLACEHOLDERXYZ{i}PLACEHOLDERXYZ", block)
+        markdown_for_pandoc = markdown_for_pandoc.replace(f"LATEXBLOCKPLACEHOLDERXYZ{i}PLACEHOLDERXYZ", block)
+
+    # 注意：markdown_with_images 仍然包含占位符，用于HTML生成
 
     # 5. 生成输出文件名
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     docx_filename = f'output_{timestamp}_{uuid.uuid4().hex[:8]}.docx'
     docx_path = os.path.join(TEMP_DIR, docx_filename)
 
-    # 6. Pandoc 转换
-    convert_with_pandoc(markdown_with_images, docx_path)
+    # 6. Pandoc 转换（使用恢复LaTeX的版本）
+    convert_with_pandoc(markdown_for_pandoc, docx_path)
 
     # 7. python-docx 样式调整
     adjust_docx_styles(docx_path)
 
-    # 8. 生成预览 HTML（传递 latex_blocks 用于恢复）
+    # 8. 生成预览 HTML（使用包含占位符的版本）
     preview_html = generate_preview_html(markdown_with_images, latex_blocks)
 
     return {
@@ -294,38 +297,29 @@ def simple_markdown_to_html(markdown):
     in_code_block = False
     code_lines = []
     in_display_math = False
-    display_math_lines = []
     in_table = False
     table_rows = []
 
-    i = 0
-    while i < len(lines):
-        line = lines[i]
-
+    for line in lines:
         # 检测 display math 开始
         if line.strip() == r'\[':
+            # 开始收集 display math（多行）
             in_display_math = True
-            display_math_lines = [line]
-            i += 1
-            # 收集 display math 内容直到 \]
-            while i < len(lines):
-                if lines[i].strip() == r'\]':
-                    display_math_lines.append(lines[i])
-                    # 渲染完整的 display math
-                    math_content = '\n'.join(display_math_lines)
-                    html_lines.append(f'<p>{math_content}</p>')
-                    in_display_math = False
-                    display_math_lines = []
-                    i += 1
-                    break
-                else:
-                    display_math_lines.append(lines[i])
-                    i += 1
+            math_lines = []
             continue
 
-        # 如果在 display math 中，跳过其他处理
+        # 检测 display math 结束
+        if line.strip() == r'\]':
+            # 结束 display math，输出为一个块
+            in_display_math = False
+            math_content = r'\[' + '\n'.join(math_lines) + r'\]'
+            html_lines.append(f'<p>{math_content}</p>')
+            math_lines = []
+            continue
+
+        # 如果在 display math 中，收集行
         if in_display_math:
-            i += 1
+            math_lines.append(line)
             continue
 
         # 处理代码块
@@ -337,12 +331,10 @@ def simple_markdown_to_html(markdown):
                 code_html = '<pre><code>' + '\n'.join(code_lines) + '</code></pre>'
                 html_lines.append(code_html)
                 in_code_block = False
-            i += 1
             continue
 
         if in_code_block:
             code_lines.append(line)
-            i += 1
             continue
 
         # 处理标题
@@ -351,35 +343,29 @@ def simple_markdown_to_html(markdown):
             if 1 <= level <= 6:
                 text = line.lstrip('#').strip()
                 html_lines.append(f'<h{level}>{text}</h{level}>')
-                i += 1
                 continue
 
-        # 处理表格
+        # 处理表格（简化处理：检测连续的表格行）
         if '|' in line and line.strip():
             if not in_table:
                 in_table = True
                 table_rows = []
             table_rows.append(line)
-            # 检查后续行是否还有表格
-            next_idx = i + 1
-            next_lines = lines[next_idx:next_idx+6] if next_idx < len(lines) else []
-            if not any('|' in l for l in next_lines):
-                # 渲染表格
+            continue
+        elif in_table:
+            # 表格结束（没有 | 了）
+            if '|' not in line:
                 html_lines.append(render_table(table_rows))
                 in_table = False
                 table_rows = []
-            i += 1
-            continue
-        elif in_table:
-            # 渲染表格
-            html_lines.append(render_table(table_rows))
-            in_table = False
-            table_rows = []
             # 继续处理当前行
 
         # 处理粗体和斜体
+        # 如果行中包含LaTeX占位符，跳过斜体处理（避免破坏数学符号中的下划线）
+        has_latex_placeholder = 'LATEXBLOCKPLACEHOLDERXYZ' in line
         line = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', line)
-        line = re.sub(r'_(.+?)_', r'<em>\1</em>', line)
+        if not has_latex_placeholder:
+            line = re.sub(r'_(.+?)_', r'<em>\1</em>', line)
 
         # 处理行内代码
         line = re.sub(r'`([^`]+)`', r'<code>\1</code>', line)
@@ -389,8 +375,6 @@ def simple_markdown_to_html(markdown):
             html_lines.append('<br>')
         else:
             html_lines.append(f'<p>{line}</p>')
-
-        i += 1
 
     return '\n'.join(html_lines)
 

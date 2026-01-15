@@ -100,7 +100,7 @@ document.getElementById('exportPdf').addEventListener('click', () => {
 });
 
 // 初始化示例内容
-const exampleMarkdown = `# 欢迎使用 AI2Word
+const exampleMarkdown = `# 欢迎使用 Fmt this Shit
 
 这是一个 Markdown 转 Word 的工具。
 

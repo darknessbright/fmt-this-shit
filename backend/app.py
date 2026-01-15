@@ -50,7 +50,7 @@ def download(filename):
 
 if __name__ == '__main__':
     print("=" * 40)
-    print("  AI2Word 服务启动")
+    print("  Fmt this Shit 服务启动")
     print("  访问地址: http://localhost:5678")
     print("  按 Ctrl+C 停止服务")
     print("=" * 40)

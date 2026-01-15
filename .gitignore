@@ -27,3 +27,6 @@ Thumbs.db
 # Frontend libraries (to be downloaded separately)
 frontend/libs/codemirror/*
 !frontend/libs/codemirror/.gitkeep
+
+# Pandoc executable (included in portable package, not in repo)
+pandoc/

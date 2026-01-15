@@ -1,8 +1,8 @@
 {
-  "name": "ai2word",
+  "name": "fmt-this-shit",
   "version": "1.0.0",
-  "description": "AI/Markdown to Word converter",
+  "description": "Fmt this Shit - AI/Markdown to Word converter",
   "dependencies": {
-    "@mermaid-js/mermaid-cli": "^10.6.1"
+    "@mermaid-js/mermaid-cli": "^10.9.1"
   }
 }

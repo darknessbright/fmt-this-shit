@@ -1,4 +1,4 @@
-# Fmt this Shit - AI/Markdown to Word Converter
+# Fmt this Shit - AI/Markdown 转 Word 转换工具
 
 一键将 Markdown/AI 输出转换为格式完美的 Word 文档
 

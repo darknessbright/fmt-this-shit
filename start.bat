@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 echo ===================================
-echo   AI2Word 启动中...
+echo   Fmt this Shit 启动中...
 echo ===================================
 echo.
 
