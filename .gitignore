@@ -30,3 +30,7 @@ frontend/libs/codemirror/*
 
 # Pandoc executable (included in portable package, not in repo)
 pandoc/
+
+# Build output
+dist/
+*.zip

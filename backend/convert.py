@@ -11,8 +11,23 @@ from docx.shared import Pt, Inches
 # 常量配置
 # 获取项目根目录（backend 的上级目录）
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# 动态检测 Pandoc 路径
 PANDOC_PATH = os.path.join(PROJECT_ROOT, 'pandoc', 'pandoc.exe')
+if not os.path.exists(PANDOC_PATH):
+    raise FileNotFoundError(
+        f"Pandoc 可执行文件不存在: {PANDOC_PATH}\n"
+        f"请确保便携包完整，或从 https://pandoc.org/installing.html 下载"
+    )
+
+# 动态检测 mermaid-cli 路径
 MMDC_PATH = os.path.join(PROJECT_ROOT, 'node_modules', '.bin', 'mmdc.cmd')
+if not os.path.exists(MMDC_PATH):
+    raise FileNotFoundError(
+        f"mermaid-cli 不存在: {MMDC_PATH}\n"
+        f"请运行: npm install @mermaid-js/mermaid-cli"
+    )
+
 TEMP_DIR = os.path.join(PROJECT_ROOT, 'backend', 'temp')
 
 def ensure_temp_dir():

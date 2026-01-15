@@ -6,17 +6,30 @@ echo ===================================
 echo.
 
 REM 1. 检查 Python 虚拟环境
-if not exist .venv (
-    echo [1/5] 创建 Python 虚拟环境...
-    python -m venv .venv
+if not exist .venv\Scripts\python.exe (
+    echo [1/5] 错误: Python 虚拟环境不存在
+    echo       便携包版本需要完整的虚拟环境
+    echo       请确保 .venv 目录完整
+    echo.
+    pause
+    exit
 ) else (
-    echo [1/5] Python 虚拟环境已存在
+    echo [1/5] Python 虚拟环境已就绪
 )
 
-REM 2. 激活虚拟环境并安装依赖
+REM 2. 检查 Python 依赖
 echo [2/5] 检查 Python 依赖...
-.venv\Scripts\python -m pip install --upgrade pip
-.venv\Scripts\pip install -r requirements.txt
+.venv\Scripts\python -c "import flask; import docx" 2>nul
+if errorlevel 1 (
+    echo [2/5] 错误: Python 依赖不完整
+    echo       请确保已正确安装所有依赖
+    echo       运行: .venv\Scripts\pip install -r requirements.txt
+    echo.
+    pause
+    exit
+) else (
+    echo [2/5] Python 依赖已就绪
+)
 
 REM 3. 检查 Pandoc
 if not exist pandoc\pandoc.exe (
