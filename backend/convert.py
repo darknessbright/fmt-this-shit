@@ -37,6 +37,9 @@ def preprocess_latex(markdown):
     Returns:
         str: 预处理后的 Markdown
     """
+    # 标准化换行符为 \n（处理 Windows \r\n）
+    markdown = markdown.replace('\r\n', '\n').replace('\r', '\n')
+
     # 首先保护已有的 LaTeX 公式，避免重复处理
     # 使用更独特的占位符，避免被后续正则匹配
     latex_blocks = []
@@ -44,11 +47,20 @@ def preprocess_latex(markdown):
         latex_blocks.append(match.group(0))
         return f"LATEXBLOCKPLACEHOLDERXYZ{len(latex_blocks)-1}PLACEHOLDERXYZ"
 
-    # 保护 \[ ... \] (display math)
-    markdown = re.sub(r'\\\[.*?\\\]', save_latex_block, markdown, flags=re.DOTALL)
+    # 使用 re.escape 创建正确的模式来匹配 \[...\] 和 \(...\)
+    # 注意：r'\[' 是反斜杠+方括号，r'[' 只是方括号
+    display_open = re.escape(r'\[')
+    display_close = re.escape(r'\]')
+    inline_open = re.escape(r'\(')
+    inline_close = re.escape(r'\)')
+
+    # 保护 \[ ... \] (display math) - 跨行匹配
+    display_pattern = display_open + r'.*?' + display_close
+    markdown = re.sub(display_pattern, save_latex_block, markdown, flags=re.DOTALL)
 
     # 保护 \( ... \) (inline math)
-    markdown = re.sub(r'\\\(.*?\\\)', save_latex_block, markdown, flags=re.DOTALL)
+    inline_pattern = inline_open + r'.*?' + inline_close
+    markdown = re.sub(inline_pattern, save_latex_block, markdown)
 
     # 保护 $ ... $ (alternative inline math)
     markdown = re.sub(r'\$[^$\n]+?\$', save_latex_block, markdown)
@@ -97,7 +109,8 @@ def preprocess_latex(markdown):
             # 避免重复包裹
             if content.startswith('\\(') or content.startswith('$'):
                 return content
-            return f'\\( {content} \\)'
+            # 紧凑格式：\(content\) 而不是 \( content \)
+            return f'\\({content}\\)'
 
         markdown = re.sub(pattern, wrap_math, markdown)
 
@@ -294,13 +307,39 @@ def generate_preview_html(markdown):
     Returns:
         str: HTML 内容
     """
-    # 简单的 Markdown 转 HTML，保留 LaTeX 公式
+    # 使用 re.escape 创建正确的模式来匹配 LaTeX 公式
+    display_open = re.escape(r'\[')
+    display_close = re.escape(r'\]')
+    inline_open = re.escape(r'\(')
+    inline_close = re.escape(r'\)')
+
+    # 首先保护所有 LaTeX 公式（包括跨行的 display math）
+    latex_blocks = []
+    def save_latex_block(match):
+        latex_blocks.append(match.group(0))
+        return f"LATEXBLOCKPLACEHOLDERXYZ{len(latex_blocks)-1}PLACEHOLDERXYZ"
+
+    # 保护 \[ ... \] (display math) - 跨行匹配
+    display_pattern = display_open + r'.*?' + display_close
+    markdown = re.sub(display_pattern, save_latex_block, markdown, flags=re.DOTALL)
+
+    # 保护 \( ... \) (inline math)
+    inline_pattern = inline_open + r'.*?' + inline_close
+    markdown = re.sub(inline_pattern, save_latex_block, markdown)
+
+    # 处理剩余的 Markdown 内容（逐行处理，但跳过占位符行）
     lines = markdown.split('\n')
     html_lines = []
     in_code_block = False
     code_lines = []
 
     for line in lines:
+        # 跳过占位符行（LaTeX 公式占位符单独占一行）
+        if 'LATEXBLOCKPLACEHOLDERXYZ' in line and not line.strip().startswith('```'):
+            # 占位符行不添加 <p> 标签
+            html_lines.append(line)
+            continue
+
         # 检查代码块
         if line.strip().startswith('```'):
             if not in_code_block:
@@ -329,18 +368,27 @@ def generate_preview_html(markdown):
         line = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', line)
         line = re.sub(r'_(.+?)_', r'<em>\1</em>', line)
 
-        # 处理代码块
+        # 处理行内代码
         line = re.sub(r'`([^`]+)`', r'<code>\1</code>', line)
 
         # 处理空行
         if not line.strip():
             html_lines.append('<br>')
         else:
-            # 将 Markdown 格式的公式转换为 HTML（保留供 MathJax 处理）
-            # \( ... \) 和 \[ ... \] 保持不变，让 MathJax 处理
             html_lines.append(f'<p>{line}</p>')
 
     html = '\n'.join(html_lines)
+
+    # 恢复 LaTeX 公式（保持原始格式供 MathJax 处理）
+    for i, block in enumerate(latex_blocks):
+        # 判断是 display math 还是 inline math
+        if block.startswith(r'\['):
+            # Display math: 使用 <div> 包裹，避免与 <p> 嵌套问题
+            html = html.replace(f"LATEXBLOCKPLACEHOLDERXYZ{i}PLACEHOLDERXYZ",
+                               block)
+        else:
+            # Inline math: 保持原位
+            html = html.replace(f"LATEXBLOCKPLACEHOLDERXYZ{i}PLACEHOLDERXYZ", block)
 
     # 添加基础样式
     styled_html = f"""
