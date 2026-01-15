@@ -20,6 +20,93 @@ def ensure_temp_dir():
     if not os.path.exists(TEMP_DIR):
         os.makedirs(TEMP_DIR)
 
+def preprocess_latex(markdown):
+    """
+    智能预处理：自动识别并包裹数学符号
+
+    检测以下模式并包裹为 \( ... \)：
+    - 希腊字母：α, β, γ, θ, λ, μ, σ, ω, Δ, Σ, Π, Ω 等
+    - 数学函数带下标/上标：s_i, x^2, k_{i+1} 等
+    - 数学花体字母：\mathcal{W}, \mathcal{D} 等（但已包裹的跳过）
+    - 数学符号：\dots, \ldots, \in, \leq, \geq, \neq, \approx 等
+    - 已有 \( ... \) 或 \[ ... \] 包裹的跳过
+
+    Args:
+        markdown: 原始 Markdown 内容
+
+    Returns:
+        str: 预处理后的 Markdown
+    """
+    # 首先保护已有的 LaTeX 公式，避免重复处理
+    # 使用更独特的占位符，避免被后续正则匹配
+    latex_blocks = []
+    def save_latex_block(match):
+        latex_blocks.append(match.group(0))
+        return f"LATEXBLOCKPLACEHOLDERXYZ{len(latex_blocks)-1}PLACEHOLDERXYZ"
+
+    # 保护 \[ ... \] (display math)
+    markdown = re.sub(r'\\\[.*?\\\]', save_latex_block, markdown, flags=re.DOTALL)
+
+    # 保护 \( ... \) (inline math)
+    markdown = re.sub(r'\\\(.*?\\\)', save_latex_block, markdown, flags=re.DOTALL)
+
+    # 保护 $ ... $ (alternative inline math)
+    markdown = re.sub(r'\$[^$\n]+?\$', save_latex_block, markdown)
+
+    # 保护 $$ ... $$ (alternative display math)
+    markdown = re.sub(r'\$\$[^$]+?\$\$', save_latex_block, markdown, flags=re.DOTALL)
+
+    # 定义数学符号模式 - 排除占位符格式
+    patterns = [
+        # 希腊字母（小写和大写）- 但不在占位符中
+        r'(?<!PLACEHOLDER)(?<!XYZ)\\?[αβγδεζηθικλμνξοπρστυφχψωΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ](?!PLACEHOLDER)',
+
+        # LaTeX 希腊字母
+        r'\\(alpha|beta|gamma|delta|epsilon|zeta|eta|theta|iota|kappa|lambda|mu|nu|xi|pi|rho|sigma|tau|upsilon|phi|chi|psi|omega)',
+        r'\\(Alpha|Beta|Gamma|Delta|Epsilon|Zeta|Eta|Theta|Iota|Kappa|Lambda|Mu|Nu|Xi|Pi|Rho|Sigma|Tau|Upsilon|Phi|Chi|Psi|Omega)',
+
+        # 数学字母类：\mathcal, \mathbb, \mathbf, \mathfrak, \mathsf
+        r'\\(mathcal|mathbb|mathbf|mathfrak|mathsf|mathrm)\{[^}]+\}',
+
+        # 下标模式：x_i, s_1, k_{i+1}, θ_j 等（至少一个字母后跟 _）
+        r'[a-zA-Zα-ωΑ-Ω]_\{[^}]+\}',     # x_{i+1}
+        r'[a-zA-Zα-ωΑ-Ω]_[a-zA-Z0-9]',    # s_i
+
+        # 上标模式：x^2, θ^{*} 等
+        r'[a-zA-Zα-ωΑ-Ω]\^\{[^}]+\}',     # x^{2n}
+        r'[a-zA-Zα-ωΑ-Ω]\^[0-9+\-*]',     # x^2
+
+        # 组合上下标：s_{i}^{j}, x_{i+1}^{*}
+        r'[a-zA-Zα-ωΑ-Ω]_\{[^}]+\}\^\{[^}]+\}',
+        r'[a-zA-Zα-ωΑ-Ω]\^[0-9+\-]_\{[^}]+\}',
+
+        # LaTeX 数学符号/运算符
+        r'\\(dots|ldots|cdots|vdots|ddots)',
+        r'\\(le|ge|leq|geq|ne|neq|approx|equiv|sim)',
+        r'\\(in|notin|subset|subseteq|supset|supseteq)',
+        r'\\(cup|cap|setminus|times|div|pm|mp)',
+        r'\\(to|rightarrow|leftarrow|leftrightarrow|Rightarrow|Leftarrow|Leftrightarrow)',
+        r'\\(partial|nabla|infty|emptyset|exists|forall)',
+        r'\\(lfloor|rfloor|lceil|rceil|langle|rangle)',
+    ]
+
+    # 对每个模式进行处理
+    for pattern in patterns:
+        def wrap_math(match):
+            content = match.group(0)
+            # 避免重复包裹
+            if content.startswith('\\(') or content.startswith('$'):
+                return content
+            return f'\\( {content} \\)'
+
+        markdown = re.sub(pattern, wrap_math, markdown)
+
+    # 恢复之前保护的 LaTeX 块
+    for i, block in enumerate(latex_blocks):
+        markdown = markdown.replace(f"LATEXBLOCKPLACEHOLDERXYZ{i}PLACEHOLDERXYZ", block)
+
+    return markdown
+
 def render_mermaid_diagrams(markdown):
     """
     渲染 Mermaid 流程图为图片
@@ -168,24 +255,27 @@ def convert_markdown(markdown):
     """
     ensure_temp_dir()
 
-    # 1. 提取并渲染 Mermaid 图表
+    # 1. 智能预处理 LaTeX 数学符号（在所有处理之前）
+    markdown = preprocess_latex(markdown)
+
+    # 2. 提取并渲染 Mermaid 图表
     mermaid_images = render_mermaid_diagrams(markdown)
 
-    # 2. 替换 Markdown 中的 mermaid 代码块为图片引用
+    # 3. 替换 Markdown 中的 mermaid 代码块为图片引用
     markdown_with_images = replace_mermaid_with_images(markdown, mermaid_images)
 
-    # 3. 生成输出文件名
+    # 4. 生成输出文件名
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     docx_filename = f'output_{timestamp}_{uuid.uuid4().hex[:8]}.docx'
     docx_path = os.path.join(TEMP_DIR, docx_filename)
 
-    # 4. Pandoc 转换
+    # 5. Pandoc 转换
     convert_with_pandoc(markdown_with_images, docx_path)
 
-    # 5. python-docx 样式调整
+    # 6. python-docx 样式调整
     adjust_docx_styles(docx_path)
 
-    # 6. 生成预览 HTML
+    # 7. 生成预览 HTML
     preview_html = generate_preview_html(markdown_with_images)
 
     return {
