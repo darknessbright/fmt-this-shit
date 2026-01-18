@@ -34,3 +34,5 @@ pandoc/
 # Build output
 dist/
 *.zip
+build/
+*.spec

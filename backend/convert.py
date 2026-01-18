@@ -1,6 +1,7 @@
 # backend/convert.py
 """Markdown 转 Word 转换核心模块"""
 import os
+import sys
 import re
 import subprocess
 import uuid
@@ -9,8 +10,13 @@ from docx import Document
 from docx.shared import Pt, Inches
 
 # 常量配置
-# 获取项目根目录（backend 的上级目录）
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# 获取项目根目录（支持开发和打包环境）
+if getattr(sys, 'frozen', False):
+    # 打包后的 exe 环境：使用 exe 所在目录
+    PROJECT_ROOT = os.path.dirname(sys.executable)
+else:
+    # 开发环境：使用 __file__ 的上级目录
+    PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # 动态检测 Pandoc 路径
 PANDOC_PATH = os.path.join(PROJECT_ROOT, 'pandoc', 'pandoc.exe')
@@ -28,7 +34,7 @@ if not os.path.exists(MMDC_PATH):
         f"请运行: npm install @mermaid-js/mermaid-cli"
     )
 
-TEMP_DIR = os.path.join(PROJECT_ROOT, 'backend', 'temp')
+TEMP_DIR = os.path.join(PROJECT_ROOT, 'temp')
 
 def ensure_temp_dir():
     """确保临时目录存在"""

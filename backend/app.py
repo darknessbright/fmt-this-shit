@@ -1,14 +1,31 @@
 # backend/app.py
 from flask import Flask, send_file, request, jsonify, render_template_string
-from convert import convert_markdown, TEMP_DIR, PANDOC_PATH, MMDC_PATH
+from convert import convert_markdown, TEMP_DIR, PANDOC_PATH, MMDC_PATH, PROJECT_ROOT
 import os
+import sys
 
-app = Flask(__name__, static_folder='../frontend', static_url_path='')
+# 支持 PyInstaller 打包后的资源路径
+if getattr(sys, 'frozen', False):
+    # 打包环境：frontend 在 _MEIPASS 内
+    template_folder = os.path.join(sys._MEIPASS, 'frontend')
+    static_folder = os.path.join(sys._MEIPASS, 'frontend')
+else:
+    # 开发环境
+    template_folder = '../frontend'
+    static_folder = '../frontend'
+
+app = Flask(__name__, static_folder=static_folder, static_url_path='')
 
 @app.route('/')
 def index():
     """返回主页面"""
-    return send_file('../frontend/index.html')
+    if getattr(sys, 'frozen', False):
+        # 打包环境
+        index_path = os.path.join(sys._MEIPASS, 'frontend', 'index.html')
+    else:
+        # 开发环境
+        index_path = os.path.join(PROJECT_ROOT, 'frontend', 'index.html')
+    return send_file(index_path)
 
 @app.route('/api/health')
 def health():
